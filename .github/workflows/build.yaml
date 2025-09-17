@@ -1,0 +1,23 @@
+name: Build App
+
+on:
+  push:
+    branches:
+      - main   # Lance le workflow à chaque push sur main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Étape 1 : Récupérer ton code
+      - uses: actions/checkout@v2
+
+      # Étape 2 : Construire et pousser ton image Docker
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: docker.io
+          repository: mrcoco28/cd   # <-- mets ton pseudo DockerHub ici
+          tag_with_sha: true
