@@ -3,49 +3,76 @@ name: Build App
 on:
   push:
     branches:
-      - main   # Lance le workflow à chaque push sur main
+      - main   # Déclenche le workflow à chaque push sur la branche main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Étape 1 : Récupérer ton code
-      - uses: actions/checkout@v2
 
-      # Étape 2 : Construire et pousser ton image Docker
+      # Étape 1 : Récupérer le code source
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Étape 2 : Configurer Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Étape 3 : Installer les dépendances NPM
+      - name: Install NPM dependencies
+        run: npm install
+
+      # Étape 4 : Générer le SBOM pour le code Node.js
+      - name: Generate SBOM for Docker image
+        uses: anchore/sbom-action@v0
+        with:
+          format: spdx-json
+          artifact-name: sbom-node-js.json
+
+      # Étape 5 : Construire et pousser l’image Docker
       - name: Build and Push Docker image
         uses: docker/build-push-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           registry: docker.io
-          repository: mrcoco28/cd   # <-- ton pseudo DockerHub
-          tag_with_sha: true
+          repository: ${{ secrets.DOCKER_USERNAME }}/cd   # Pseudo DockerHub
+          tags: ${{ github.sha }}
 
-      # Étape 3 : Scanner l’image Docker avec Trivy
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      # Étape 6 : Générer le SBOM pour l’image Docker
+      - name: Generate SBOM for Docker image
+        uses: anchore/sbom-action@v0
         with:
-          image-ref: 'docker.io/mrcoco28/cd:${{ github.sha }}'
-          format: 'table'
-          exit-code: '1'   # échoue si vulnérabilités CRITICAL/HIGH
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+          image: ${{ secrets.DOCKER_USERNAME }}/cd:${{ github.sha }}'
+          format: spdx-json
+          artifact-name: sbom-docker-image.json
 
-      # Étape 4 : Analyse SonarCloud
+      # Étape 7 : Analyse SonarCloud du code source
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # # Étape 5 : Analyse OWASP Dependency Check
+      # Étape 8 : Scanner l’image Docker avec Trivy
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'docker.io/${{ secrets.DOCKER_USERNAME }}/cd:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1'               # Échec du job si vulnérabilités CRITICAL/HIGH
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL'
+
+      # # Étape 9 : Analyse OWASP Dependency Check (désactivée)
       # - uses: 3r1co/dependency-check-action@master
       #   name: OWASP Dependency Check
       #   with:
       #     Project-Name: TestApp
         
-      # # Étape 6 : Sauvegarder les rapports OWASP
+      # # Étape 10 : Sauvegarder les rapports OWASP (désactivée)
       # - name: Archive dependency check reports
       #   uses: actions/upload-artifact@v4
       #   with:
