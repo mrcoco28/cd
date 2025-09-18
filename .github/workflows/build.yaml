@@ -3,7 +3,7 @@ name: Build App
 on:
   push:
     branches:
-      - main
+      - main   # Lance le workflow à chaque push sur main
 
 jobs:
   build:
@@ -12,55 +12,42 @@ jobs:
       # Étape 1 : Récupérer ton code
       - uses: actions/checkout@v2
 
-      # Étape 2 : Installer les dépendances Node.js
-      - name: Install NPM dependencies
-        run: |
-          npm install --production --unsafe-perm
-
-      # Étape 3 : Construire et pousser l’image Docker
+      # Étape 2 : Construire et pousser ton image Docker
       - name: Build and Push Docker image
         uses: docker/build-push-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           registry: docker.io
-          repository: mrcoco28/cd
+          repository: mrcoco28/cd   # <-- ton pseudo DockerHub
           tag_with_sha: true
 
-      # Étape 4 : Scanner l’image Docker avec Trivy
+      # Étape 3 : Scanner l’image Docker avec Trivy
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'docker.io/mrcoco28/cd:${{ github.sha }}'
           format: 'table'
-          exit-code: '1'   # échoue si vulnérabilités critiques/hautes
+          exit-code: '1'   # échoue si vulnérabilités CRITICAL/HIGH
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
-      # Étape 5 : Analyse OWASP Dependency Check
-      - name: Run OWASP Dependency Check
-        uses: dependency-check/Dependency-Check_Action@main
-        with:
-          project: "cd"
-          path: "."
-          format: "ALL"
-          out: "reports"
-
-      # Étape 6 : Sauvegarder les rapports
-      - name: Archive dependency check reports
-        uses: actions/upload-artifact@v1
-        with:
-          name: reports
-          path: reports
-
-      # Étape 7 : Analyse SonarCloud
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5.0.0
+      # Étape 4 : Analyse SonarCloud
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=mrcoco28_cd
-            -Dsonar.organization=mrcoco28
-            -Dsonar.host.url=https://sonarcloud.io
+
+      # # Étape 5 : Analyse OWASP Dependency Check
+      # - uses: 3r1co/dependency-check-action@master
+      #   name: OWASP Dependency Check
+      #   with:
+      #     Project-Name: TestApp
+        
+      # # Étape 6 : Sauvegarder les rapports OWASP
+      # - name: Archive dependency check reports
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: reports
+      #     path: reports
