@@ -21,3 +21,7 @@ jobs:
           registry: docker.io
           repository: mrcoco28/cd   # <-- mets ton pseudo DockerHub ici
           tag_with_sha: true
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
