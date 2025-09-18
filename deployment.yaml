@@ -13,8 +13,8 @@ spec:
     metadata:
       labels:
         app: webserver
-    spec:
-      containers:
+    spec:# Noncompliant
+      containers: 
       - name: webserver
         image: mywebserver:1.0
         imagePullPolicy: IfNotPresent
