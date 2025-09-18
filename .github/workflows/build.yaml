@@ -32,13 +32,15 @@ jobs:
           artifact-name: sbom-node-js.json
 
       # Étape 5 : Construire et pousser l’image Docker
-      - name: Build and Push Docker image
-        uses: docker/build-push-action@v4
+      - name: build-push
+        uses: docker/build-push-action@v1
         with:
-          context: .
-          push: true
-          tags: docker.io/${{ secrets.DOCKER_USERNAME }}/cd:${{ github.sha }}
-
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: docker.io
+          repository: ${{ secrets.DOCKER_USERNAME }}/cd
+          tags: ${{ github.sha }}
+ 
 
       # Étape 6 : Générer le SBOM pour l’image Docker
       - name: Generate SBOM for Docker image
