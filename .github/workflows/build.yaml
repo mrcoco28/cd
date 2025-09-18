@@ -35,19 +35,19 @@ jobs:
       - name: Build and Push Docker image
         uses: docker/build-push-action@v4
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          registry: docker.io
-          repository: ${{ secrets.DOCKER_USERNAME }}/cd   # Pseudo DockerHub
-          tags: ${{ github.sha }}
+          context: .
+          push: true
+          tags: docker.io/${{ secrets.DOCKER_USERNAME }}/cd:${{ github.sha }}
+
 
       # Étape 6 : Générer le SBOM pour l’image Docker
       - name: Generate SBOM for Docker image
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ secrets.DOCKER_USERNAME }}/cd:${{ github.sha }}
+          image: docker.io/${{ secrets.DOCKER_USERNAME }}/cd:${{ github.sha }}
           format: spdx-json
           artifact-name: sbom-docker-image.json
+
 
       # Étape 7 : Analyse SonarCloud du code source
       - name: SonarQube Scan
