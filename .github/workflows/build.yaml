@@ -19,9 +19,16 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           registry: docker.io
-          repository: mrcoco28/cd   # <-- mets ton pseudo DockerHub ici
+          repository: mrcoco28/cd   # ton DockerHub repo
           tag_with_sha: true
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v5
+
+      # Étape 3 : Analyse avec SonarCloud
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=mrcoco28_cd   # ton Project Key SonarCloud
+            -Dsonar.organization=mrcoco28    # ton organisation SonarCloud
+            -Dsonar.host.url=https://sonarcloud.io
